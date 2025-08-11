@@ -1,4 +1,4 @@
-
+A simple Tkinter desktop app with MongoDB backend for managing car records using CRUD operations.
 Mini-project-car-database-using-GUI 
 Car Management System - Python Tkinter + MongoDB
 A desktop application built with Python Tkinter for GUI and MongoDB as the database.
