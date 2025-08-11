@@ -1,0 +1,153 @@
+import tkinter as tk
+from tkinter import messagebox
+from pymongo import MongoClient
+
+# ----------------- MongoDB Connection -----------------
+client = MongoClient("mongodb://localhost:27017/")  # Change if using MongoDB Atlas
+db = client["car_database"]
+collection = db["car"]
+
+# ----------------- Colors & Styles -----------------
+BG_COLOR = "#1e1e2f"      # Dark background
+FG_COLOR = "#ffffff"      # White text
+BTN_COLOR = "#4CAF50"     # Green buttons
+BTN_HOVER = "#45a049"     # Hover effect
+ENTRY_BG = "#2e2e3f"      # Dark entry field
+FONT = ("Segoe UI", 10)
+
+# ----------------- Functions -----------------
+def create_car():
+    car = get_form_data()
+    if not all(car.values()):
+        messagebox.showerror("Error", "All fields are required.")
+        return
+    if collection.find_one({"id": car["id"]}):
+        messagebox.showerror("Error", "Car with this ID already exists.")
+        return
+    collection.insert_one(car)
+    messagebox.showinfo("Success", "Car added successfully!")
+    clear_entries()
+    read_cars()
+
+
+def read_cars():
+    listbox.delete(0, tk.END)
+
+    # Add header
+    header = f"{'ID':<10} {'Color':<15} {'Model':<20} {'No Plate':<15}"
+    listbox.insert(tk.END, header)
+    listbox.insert(tk.END, "-" * 65)  # separator line
+
+    # Fetch and display cars
+    for car in collection.find():
+        car_id = car.get("id", "")
+        color = car.get("color", "")
+        model = car.get("model", "")
+        noplate = car.get("noplate", "")
+
+        listbox.insert(tk.END, f"{car_id:<10} {color:<15} {model:<20} {noplate:<15}")
+
+
+def update_car():
+    car_id = entry_id.get()
+    if not car_id:
+        messagebox.showerror("Error", "Car ID is required for update.")
+        return
+    new_values = get_form_data()
+    result = collection.update_one({"id": car_id}, {"$set": new_values})
+    if result.modified_count > 0:
+        messagebox.showinfo("Success", "Car updated successfully!")
+    else:
+        messagebox.showwarning("Warning", "No changes made or Car not found.")
+    clear_entries()
+    read_cars()
+
+def delete_car():
+    car_id = entry_id.get()
+    if not car_id:
+        messagebox.showerror("Error", "Car ID is required for deletion.")
+        return
+    result = collection.delete_one({"id": car_id})
+    if result.deleted_count > 0:
+        messagebox.showinfo("Success", "Car deleted successfully!")
+    else:
+        messagebox.showwarning("Warning", "Car not found.")
+    clear_entries()
+    read_cars()
+
+def clear_entries():
+    for entry in (entry_id, entry_color, entry_model, entry_noplate):
+        entry.delete(0, tk.END)
+
+def get_form_data():
+    return {
+        "id": entry_id.get().strip(),
+        "color": entry_color.get().strip(),
+        "model": entry_model.get().strip(),
+        "noplate": entry_noplate.get().strip()
+    }
+
+def on_listbox_select(event):
+    selection = listbox.curselection()
+    if selection:
+        index = selection[0]
+        data = listbox.get(index).split(" | ")
+        clear_entries()
+        entry_id.insert(0, data[0])
+        entry_color.insert(0, data[1])
+        entry_model.insert(0, data[2])
+        entry_noplate.insert(0, data[3])
+
+# ----------------- UI Setup -----------------
+root = tk.Tk()
+root.title("Car Management System")
+root.geometry("600x500")
+root.config(bg=BG_COLOR)
+
+# Top-left label
+top_label = tk.Label(root, text="suraj sakpal 500 -CRUD Operation With Python GUI", bg=BG_COLOR, fg=FG_COLOR, font=("Segoe UI", 12, "bold"))
+top_label.pack(anchor="w", padx=10, pady=5)
+
+# Form Frame (Left aligned)
+form_frame = tk.Frame(root, bg=BG_COLOR)
+form_frame.pack(anchor="w", padx=10, pady=5)
+
+# Form Fields (Left alignment)
+def create_label_entry(text):
+    label = tk.Label(form_frame, text=text, bg=BG_COLOR, fg=FG_COLOR, font=FONT, anchor="w")
+    label.pack(anchor="w")
+    entry = tk.Entry(form_frame, bg=ENTRY_BG, fg=FG_COLOR, insertbackground="white", font=FONT, width=30)
+    entry.pack(anchor="w", pady=5, ipady=3, ipadx=5)
+    return entry
+
+entry_id = create_label_entry("Car ID")
+entry_color = create_label_entry("Color")
+entry_model = create_label_entry("Model")
+entry_noplate = create_label_entry("No Plate")
+
+# Button Frame (Left aligned)
+btn_frame = tk.Frame(root, bg=BG_COLOR)
+btn_frame.pack(anchor="w", padx=10, pady=5)
+
+def create_button(text, command, color=BTN_COLOR):
+    btn = tk.Button(btn_frame, text=text, command=command, bg=color, fg="white",
+                    activebackground=BTN_HOVER, font=FONT, width=12)
+    btn.pack(side=tk.LEFT, padx=5)
+    return btn
+
+create_button("Create", create_car)
+create_button("Read", read_cars)
+create_button("Update", update_car)
+create_button("Delete", delete_car)
+create_button("Clear", clear_entries, "#e74c3c")  # Red clear button
+
+# Listbox (Below everything, left aligned)
+listbox = tk.Listbox(root, width=70, height=15, bg=ENTRY_BG, fg=FG_COLOR,
+                     font=FONT, selectbackground="#5555aa")
+listbox.pack(anchor="w", padx=10, pady=10)
+listbox.bind("<<ListboxSelect>>", on_listbox_select)
+
+# Load initial data
+read_cars()
+
+root.mainloop()
