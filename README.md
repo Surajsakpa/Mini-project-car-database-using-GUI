@@ -23,3 +23,5 @@ MongoDB (Database)
 
 pymongo (MongoDB connector)
 Output-:
+<img width="1773" height="962" alt="Image" src="https://github.com/user-attachments/assets/59d1f92e-ac92-431a-994b-ab44bcdaa22f" />
+<img width="1246" height="892" alt="Image" src="https://github.com/user-attachments/assets/4c806b0c-2bf0-4e68-9799-5febb260b825" />
